@@ -40,11 +40,11 @@ spec:
             backend:
               {{- if semverCompare ">=1.19-0" $.Capabilities.KubeVersion.GitVersion }}
               service:
-                name: {{ $fullName }}
+                name: {{ $fullName }}-write
                 port:
                   name: http-write
               {{- else }}
-              serviceName: {{ $fullName }}
+              serviceName: {{ $fullName }}-write
               servicePort: http-write
               {{- end }}
           {{- end }}
