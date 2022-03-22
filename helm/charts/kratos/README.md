@@ -1,6 +1,6 @@
 # kratos
 
-![Version: 0.21.7](https://img.shields.io/badge/Version-0.21.7-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.8.0-alpha.3](https://img.shields.io/badge/AppVersion-v0.8.0--alpha.3-informational?style=flat-square)
+![Version: 0.22.2](https://img.shields.io/badge/Version-0.22.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: v0.8.0-alpha.3](https://img.shields.io/badge/AppVersion-v0.8.0--alpha.3-informational?style=flat-square)
 
 A ORY Kratos Helm chart for Kubernetes
 
@@ -13,15 +13,16 @@ A ORY Kratos Helm chart for Kubernetes
 | deployment.annotations | object | `{}` |  |
 | deployment.automountServiceAccountToken | bool | `true` |  |
 | deployment.extraArgs | list | `[]` | Array of extra argumetns to be passed down to the deployment. Kubernetes args format is expected - --foo - --sqa-opt-out |
+| deployment.extraContainers | object | `{}` | If you want to add extra sidecar containers.  |
 | deployment.extraEnv | list | `[]` | Array of extra envs to be passed to the deployment. Kubernetes format is expected - name: FOO   value: BAR |
 | deployment.extraInitContainers | object | `{}` |  |
 | deployment.extraVolumeMounts | list | `[]` |  |
 | deployment.extraVolumes | list | `[]` | If you want to mount external volume For example, mount a secret containing Certificate root CA to verify database TLS connection. |
 | deployment.labels | object | `{}` |  |
-| deployment.livenessProbe | object | `{"failureThreshold":5,"httpGet":{"path":"/health/alive","port":"http-admin"},"initialDelaySeconds":30,"periodSeconds":10}` | Configure the probes for when the deployment is considered ready and ongoing health check |
+| deployment.livenessProbe | object | `{"failureThreshold":5,"httpGet":{"path":"/admin/health/alive","port":"http-admin"},"initialDelaySeconds":30,"periodSeconds":10}` | Configure the probes for when the deployment is considered ready and ongoing health check |
 | deployment.nodeSelector | object | `{}` | Node labels for pod assignment. |
 | deployment.readinessProbe.failureThreshold | int | `5` |  |
-| deployment.readinessProbe.httpGet.path | string | `"/health/ready"` |  |
+| deployment.readinessProbe.httpGet.path | string | `"/admin/health/ready"` |  |
 | deployment.readinessProbe.httpGet.port | string | `"http-admin"` |  |
 | deployment.readinessProbe.initialDelaySeconds | int | `30` |  |
 | deployment.readinessProbe.periodSeconds | int | `10` |  |
@@ -51,7 +52,17 @@ A ORY Kratos Helm chart for Kubernetes
 | ingress.public.hosts[0].paths[0].path | string | `"/"` |  |
 | ingress.public.hosts[0].paths[0].pathType | string | `"ImplementationSpecific"` |  |
 | ingress.public.tls | list | `[]` |  |
-| job | object | `{"annotations":{},"ttlSecondsAfterFinished":60}` | Values for initialization job |
+| job | object | `{"annotations":{},"automountServiceAccountToken":true,"extraContainers":{},"lifecycle":{},"serviceAccount":{"annotations":{"helm.sh/hook":"pre-install, pre-upgrade","helm.sh/hook-delete-policy":"before-hook-creation","helm.sh/hook-weight":"0"},"create":true,"name":""},"shareProcessNamespace":false,"spec":{"backoffLimit":10}}` | Values for initialization job |
+| job.annotations | object | `{}` | If you do want to specify annotations, uncomment the following lines, adjust them as necessary, and remove the curly braces after 'annotations:'. |
+| job.automountServiceAccountToken | bool | `true` | Set automounting of the SA token |
+| job.extraContainers | object | `{}` | If you want to add extra sidecar containers.  |
+| job.lifecycle | object | `{}` | If you want to add lifecycle hooks.  |
+| job.serviceAccount | object | `{"annotations":{"helm.sh/hook":"pre-install, pre-upgrade","helm.sh/hook-delete-policy":"before-hook-creation","helm.sh/hook-weight":"0"},"create":true,"name":""}` | Specify the serviceAccountName value. In some situations it is needed to provides specific permissions to Hydra deployments Like for example installing Hydra on a cluster with a PosSecurityPolicy and Istio. Uncoment if it is needed to provide a ServiceAccount for the Hydra deployment. |
+| job.serviceAccount.annotations | object | `{"helm.sh/hook":"pre-install, pre-upgrade","helm.sh/hook-delete-policy":"before-hook-creation","helm.sh/hook-weight":"0"}` | Annotations to add to the service account |
+| job.serviceAccount.create | bool | `true` | Specifies whether a service account should be created |
+| job.serviceAccount.name | string | `""` | The name of the service account to use. If not set and create is true, a name is generated using the fullname template |
+| job.shareProcessNamespace | bool | `false` | Set sharing process namespace  |
+| job.spec.backoffLimit | int | `10` | Set job back off limit |
 | kratos.autoMigrate | bool | `false` | Enable the initialization job. Required to work with a DB |
 | kratos.config | object | `{"courier":{"smtp":{}},"secrets":{},"serve":{"admin":{"port":4434},"public":{"port":4433}}}` | You can customize the emails kratos is sending (also uncomment config.courier.template_override_path below)  Note: If you are setting config.courier.template_override_path you need to supply overrides for all templates.        It is currently not possible to overrides only selected methods.  emailTemplates:    recovery:      valid:        subject: Recover access to your account        body: |-          Hi, please recover access to your account by clicking the following link:          <a href="{{ .RecoveryURL }}">{{ .RecoveryURL }}</a>        plainBody: Hi, please recover access to your account by clicking the following link: {{ .RecoveryURL }}      invalid:        subject: Account access attempted        body: |-          Hi, you (or someone else) entered this email address when trying to recover access to an account.          However, this email address is not on our database of registered users and therefore the attempt has failed. If this was you, check if you signed up using a different address. If this was not you, please ignore this email.        plainBody: Hi, you (or someone else) entered this email address when trying to recover access to an account.    verification:      valid:        subject: Please verify your email address        body: |-          Hi, please verify your account by clicking the following link:          <a href="{{ .VerificationURL }}">{{ .VerificationURL }}</a>        plainBody: Hi, please verify your account by clicking the following link: {{ .VerificationURL }}      invalid:        subject:        body:        plainBody: |
 | kratos.development | bool | `false` |  |
@@ -84,6 +95,7 @@ A ORY Kratos Helm chart for Kubernetes
 | service.public.name | string | `"http"` | The service port name. Useful to set a custom service port name if it must follow a scheme (e.g. Istio) |
 | service.public.port | int | `80` |  |
 | service.public.type | string | `"ClusterIP"` |  |
+| statefulSet.resources | object | `{}` |  |
 | statefulset.log.format | string | `"json"` |  |
 | statefulset.log.level | string | `"trace"` |  |
 | strategy | object | `{"rollingUpdate":{"maxSurge":"30%","maxUnavailable":0},"type":"RollingUpdate"}` | Deployment update strategy |

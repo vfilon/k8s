@@ -15,7 +15,7 @@ image:
   repository: oryd/kratos
   # -- ORY KRATOS VERSION
   # Alternative format: image: oryd/kratos:v0.6.3-alpha.1
-  tag: v0.8.0-alpha.3
+  tag: v0.9.0-alpha.2
   pullPolicy: IfNotPresent
   # imagePullPolicy: Always
 
@@ -162,18 +162,19 @@ kratos:
 
     secrets: {}
 
+## -- Configuration options for the k8s deployment
 deployment:
    # -- Configure the probes for when the deployment is considered ready and ongoing health check
   livenessProbe:
     httpGet:
-      path: /health/alive
+      path: /admin/health/alive
       port: http-admin
     initialDelaySeconds: 30
     periodSeconds: 10
     failureThreshold: 5
   readinessProbe:
     httpGet:
-      path: /health/ready
+      path: /admin/health/ready
       port: http-admin
     initialDelaySeconds: 30
     periodSeconds: 10
@@ -212,6 +213,12 @@ deployment:
   # -- If you want to add extra init containers. These are processed before the migration init container.
   extraInitContainers: {}
   # extraInitContainers: |
+  #  - name: ...
+  #    image: ...
+
+  # -- If you want to add extra sidecar containers. 
+  extraContainers: {}
+  # extraContainers: |
   #  - name: ...
   #    image: ...
 
@@ -292,6 +299,20 @@ deployment:
   # https://github.com/kubernetes/kubernetes/issues/57601
   automountServiceAccountToken: true
 
+## -- Configuration options for the k8s statefulSet
+statefulSet:
+    resources: {}
+    #  We usually recommend not to specify default resources and to leave this as a conscious
+    #  choice for the user. This also increases chances charts run on environments with little
+    #  resources, such as Minikube. If you do want to specify resources, uncomment the following
+    #  lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+    #  limits:
+    #    cpu: 100m
+    #    memory: 128Mi
+    #  requests:
+    #    cpu: 100m
+    #  memory: 128Mi
+
 securityContext:
   capabilities:
     drop:
@@ -312,8 +333,49 @@ autoscaling:
 
 # -- Values for initialization job
 job:
+  # -- If you do want to specify annotations, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'annotations:'.
   annotations: {}
-  ttlSecondsAfterFinished: 60
+  # kubernetes.io/ingress.class: nginx
+  # kubernetes.io/tls-acme: "true"
+
+  # -- If you want to add extra sidecar containers. 
+  extraContainers: {}
+  # extraContainers: |
+  #  - name: ...
+  #    image: ...
+
+  # -- If you want to add lifecycle hooks. 
+  lifecycle: {}
+  # lifecycle: |
+  #   preStop:
+  #     exec:
+  #       command: [...]
+
+  # -- Set automounting of the SA token
+  automountServiceAccountToken: true
+
+  # -- Set sharing process namespace 
+  shareProcessNamespace: false
+
+  # -- Specify the serviceAccountName value.
+  # In some situations it is needed to provides specific permissions to Hydra deployments
+  # Like for example installing Hydra on a cluster with a PosSecurityPolicy and Istio.
+  # Uncoment if it is needed to provide a ServiceAccount for the Hydra deployment.
+  serviceAccount:
+    # -- Specifies whether a service account should be created
+    create: true
+    # -- Annotations to add to the service account
+    annotations: 
+      helm.sh/hook-weight: "0"
+      helm.sh/hook: "pre-install, pre-upgrade"
+      helm.sh/hook-delete-policy: "before-hook-creation"
+    # -- The name of the service account to use. If not set and create is true, a name is generated using the fullname template
+    name: ""
+
+  spec:
+    # -- Set job back off limit
+    backoffLimit: 10
 
 statefulset:
   log:

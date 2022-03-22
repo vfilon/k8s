@@ -67,7 +67,10 @@ kratos:
         salt_length: 16
         key_length: 16
     identity:
-      default_schema_url: file:///etc/config/identity.default.schema.json
+      default_schema_id: default
+      schemas:
+        - id: default
+          url: file:///etc/config/identity.default.schema.json
     courier:
       smtp:
         connection_uri: smtps://test:test@mailslurper:1025/?skip_ssl_verify=true
@@ -82,7 +85,20 @@ deployment:
       image: "alpine:latest"
       command: ["/bin/sh"]
       args: ["-c", "echo hello, world!"]
+  extraContainers: |
+    - name: "sidecar"
+      image: "alpine:latest"
+      command: ["/bin/sh"]
+      args: ["-c", "sleep infinity"]
   extraArgs:
     - --sqa-opt-out
   labels:
     ory.sh/test: kratos
+
+job:
+  extraContainers: |
+    - name: "sidecar"
+      image: "alpine:latest"
+      command: ["/bin/sh"]
+      args: ["-c", "sleep 10"]
+  shareProcessNamespace: true

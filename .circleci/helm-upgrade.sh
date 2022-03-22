@@ -1,22 +1,28 @@
 #!/bin/bash
 
 set -Eeuo pipefail
-
 cfg=$(mktemp)
 export cfg
 export KUBECONFIG="$cfg"
 export TIMEOUT="120s"
+export BASE_RELEASE=$(curl -s https://api.github.com/repos/ory/k8s/releases/latest | grep "tag_name" | cut -d ':' -f 2 | tr -d '", ')
 
 kind get kubeconfig > "$cfg"
 
 cd "$( dirname "${BASH_SOURCE[0]}" )/.."
 
-release=$(echo "$1-$(date +%s)" | cut -c 1-31)
+export release=$(echo "$1-$(date +%s)" | cut -c 1-31)
 
-echo "---> Installing $1"
+function teardown() {
+    helm delete "${release}"
+}
+
+trap teardown HUP INT QUIT TERM EXIT
+
+echo "---> Installing $1 from ${BASE_RELEASE}"
 
 set +e
-helm install -f ".circleci/values/$1.yaml" "${release}" "ory/$1" --wait --timeout="${TIMEOUT}"
+helm install -f "https://raw.githubusercontent.com/ory/k8s/${BASE_RELEASE}/.circleci/values/$1.yaml" "${release}" "ory/$1" --wait --timeout="${TIMEOUT}"
 export INSTALLATION_STATUS=$?
 set -e
 

@@ -37,7 +37,8 @@ spec:
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      automountServiceAccountToken: {{ .Values.automountServiceAccountToken }}
+      serviceAccountName: {{ include "kratos.job.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.job.automountServiceAccountToken }}
       containers:
       - name: {{ .Chart.Name }}-automigrate
         image: {{ include "kratos.image" . }}
@@ -50,12 +51,19 @@ spec:
               secretKeyRef:
                 name: {{ include "kratos.secretname" . }}
                 key: dsn
+      {{- if .Values.job.lifecycle }}
+        lifecycle:
+{{ tpl .Values.job.lifecycle . | indent 10 }}
+      {{- end }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 10 }}
         {{- if .Values.deployment.extraVolumeMounts }}
         volumeMounts:
 {{ toYaml .Values.deployment.extraVolumeMounts | indent 10 }}
          {{- end }}
+      {{- if .Values.job.extraContainers }}
+{{ tpl .Values.job.extraContainers . | indent 6 }}
+      {{- end }}
       restartPolicy: Never
       {{- if .Values.deployment.extraInitContainers }}
       initContainers:
@@ -65,5 +73,6 @@ spec:
       volumes:
 {{ toYaml .Values.deployment.extraVolumes | indent 8 }}
       {{- end }}
-  backoffLimit: 10
+      shareProcessNamespace: {{ .Values.job.shareProcessNamespace }}
+  backoffLimit: {{ .Values.job.spec.backoffLimit }}
 {{- end }}

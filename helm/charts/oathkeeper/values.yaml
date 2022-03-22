@@ -13,7 +13,7 @@ image:
   # -- ORY Oathkeeper image
   repository: oryd/oathkeeper
   # -- ORY Oathkeeper version
-  tag: v0.38.17-beta.1
+  tag: v0.38.19-beta.1
   # -- Image pull policy
   pullPolicy: IfNotPresent
 
@@ -239,6 +239,12 @@ deployment:
   # - name: my-volume
   #   mountPath: /etc/secrets/my-secret
   #   readOnly: true
+
+  # -- If you want to add extra sidecar containers. 
+  extraContainers: {}
+  # extraContainers: |
+  #  - name: ...
+  #    image: ...
 
   # -- Configuration for tracing providers. Only datadog is currently supported through this block.
   # If you need to use a different tracing provider, please manually set the configuration values
